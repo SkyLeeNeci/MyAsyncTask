@@ -3,44 +3,44 @@ package test.karpenko.myasynctask
 import android.os.Handler
 import android.os.Looper
 
-abstract class MyAsyncTask(private val urls: Int) : Thread() {
+abstract class MyAsyncTask<T>(private val urls: T) : Thread() {
 
-    private var mUrls: Int? = null
     private val mMainHandler: Handler = Handler(Looper.getMainLooper())
 
-     abstract fun onPreExecute()
-     abstract fun onPostExecute(result: Int?)
-     abstract fun onProgressUpdate(result: Int?)
+    abstract fun onPreExecute()
+    abstract fun onPostExecute(result: T)
+    abstract fun onProgressUpdate(result: T)
 
-
-     fun publishProgress(progress: Int?) {
+    protected fun publishProgress(progress: T) {
         mMainHandler.post {
             onProgressUpdate(progress)
         }
     }
 
-     abstract fun doInBackground(urls: Int): Int
+    abstract fun doInBackground(urls: T): T
 
     private fun execute() {
-        mUrls = urls
         start()
     }
 
     override fun run() {
         // run in UI thread.
         mMainHandler.post { onPreExecute() }
-        var result: Int? = null
+        var result: T? = null
         try {
             // run in the background thread.
-            result = mUrls?.let { doInBackground(it) }
+            result = doInBackground(urls)
         } finally {
             // run in UI thread.
-            mMainHandler.post { onPostExecute(result) }
+            mMainHandler.post {
+                if (result != null) {
+                    onPostExecute(result)
+                }
+            }
         }
     }
 
     init {
         execute()
     }
-
 }
